@@ -21,6 +21,7 @@ import { getScenario } from "@/lib/conversation/scenarios";
 import { getExtractionProvider } from "@/lib/extraction/provider";
 import { needProfileSchema, PROFILE_FIELDS, type NeedProfile } from "@/lib/extraction/schema";
 import { getLead, recordOptOut, setLeadStatus } from "@/lib/leads";
+import { detectHindi } from "@/lib/conversation/parse";
 import { matchProducts, type MatchOutcome } from "@/lib/matching";
 import { listProducts } from "@/lib/products";
 import { buildSummary } from "@/lib/summary";
@@ -37,6 +38,18 @@ export const OUTCOME_TO_LEAD_STATUS: Record<Outcome, LeadStatus> = {
   HUMAN_REVIEW_REQUIRED: "HUMAN_REVIEW_REQUIRED",
 };
 
+
+/** Builds a stored run from LLM-agent turns (already signature-verified by the caller). */
+function replayAgentTurns(turns: { speaker: "AI" | "CUSTOMER" | "SYSTEM"; text: string }[], outcome: Outcome) {
+  let clock = 0;
+  const out = turns.map((t) => {
+    const turn = { speaker: t.speaker, text: t.text || (t.speaker === "CUSTOMER" ? "[no response from customer]" : t.text), timestampMs: clock, interrupted: false };
+    clock += 600 + t.text.split(/\s+/).length * 330 + 400;
+    return turn;
+  });
+  const hindi = turns.some((t) => t.speaker === "CUSTOMER" && detectHindi(t.text));
+  return { turns: out, outcome, ended: true, language: hindi ? "Hinglish" : "English", durationMs: clock };
+}
 
 /** A display name for the greeting only (voice demo). Letters and spaces, 40 chars max. */
 export function sanitiseName(name: string): string | null {
@@ -59,7 +72,8 @@ export async function runSimulation(
   leadId: string,
   input:
     | { scenarioKey: string }
-    | { customInputs: CustomerInput[]; channel?: "TYPED" | "BROWSER_VOICE"; callerName?: string },
+    | { customInputs: CustomerInput[]; channel?: "TYPED" | "BROWSER_VOICE"; callerName?: string }
+    | { verifiedAgentTurns: { speaker: "AI" | "CUSTOMER" | "SYSTEM"; text: string }[]; outcome: Outcome; provider: string },
   opts: { now?: Date } = {},
 ) {
   assertCan(ctx.role, "simulator.run");
@@ -67,9 +81,11 @@ export async function runSimulation(
   if (!lead.gate.allowed) {
     throw new ValidationError(`This lead can't enter a calling workflow: ${lead.gate.reasons.join("; ")}.`);
   }
-  let inputs: CustomerInput[];
+  let inputs: CustomerInput[] = [];
   let scenario: string;
-  if ("scenarioKey" in input) {
+  if ("verifiedAgentTurns" in input) {
+    scenario = "llm_voice_call";
+  } else if ("scenarioKey" in input) {
     const s = getScenario(input.scenarioKey);
     if (!s) throw new ValidationError("Unknown scenario.");
     inputs = s.inputs;
@@ -80,15 +96,18 @@ export async function runSimulation(
   }
 
   const [org] = await db.select().from(organisations).where(eq(organisations.id, ctx.organisationId));
-  const run = runConversation(
-    {
-      lenderName: org.shortName,
-      enquiryLabel: enquiryLabelFor(lead.category),
-      firstName: "callerName" in input && input.callerName ? sanitiseName(input.callerName) : lead.firstName,
-    },
-    inputs,
-    { startHindi: lead.preferredLanguage === "Hindi" },
-  );
+  const run =
+    "verifiedAgentTurns" in input
+      ? replayAgentTurns(input.verifiedAgentTurns, input.outcome)
+      : runConversation(
+          {
+            lenderName: org.shortName,
+            enquiryLabel: enquiryLabelFor(lead.category),
+            firstName: "callerName" in input && input.callerName ? sanitiseName(input.callerName) : lead.firstName,
+          },
+          inputs,
+          { startHindi: lead.preferredLanguage === "Hindi" },
+        );
   const outcome: Outcome = run.outcome ?? "HUMAN_REVIEW_REQUIRED";
 
   const startedAt = opts.now ?? new Date();
@@ -104,7 +123,7 @@ export async function runSimulation(
       startedAt,
       endedAt: new Date(startedAt.getTime() + run.durationMs),
       language: run.language,
-      provider: "simulator",
+      provider: "verifiedAgentTurns" in input ? input.provider : "simulator",
       createdByUserId: ctx.userId,
     })
     .returning();

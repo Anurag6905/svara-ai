@@ -42,6 +42,23 @@ with fictional demo data. Pick a demo user on the sign-in screen.
 
 See `DEMO_SCRIPT.md` for the 5-minute lender walkthrough.
 
+## Live call demo (AI calls you)
+
+Open **Live call demo** in the sidebar, press *Start demo call*, accept the incoming call and talk as the customer. Use Chrome or Edge on a laptop, with headphones.
+
+| Key in `.env.local` | Effect |
+|---|---|
+| `GEMINI_API_KEY` | The assistant answers open questions about the approved catalogue (Gemini). |
+| `ELEVENLABS_API_KEY` (+ optional `ELEVENLABS_VOICE_ID`) | Human-quality voice. Falls back to the browser voice. |
+| neither | Fixed script and the browser voice. Always works. |
+
+Guardrails always run in code, whatever the model says:
+- opt-out and requests for a person end the call;
+- replies with rates (unless approved), approval or eligibility promises, or credential requests are blocked;
+- every AI turn is HMAC-signed, so the saved transcript can't be edited in the browser.
+
+Restart `npm run dev` after editing `.env.local`.
+
 ## Demo users
 
 | User | Organisation | Role |

@@ -25,6 +25,8 @@ export default async function CallPage() {
         description="The assistant calls you. Answer, then talk to it as the customer — in English or Hinglish. When the call ends, it becomes a brief in the review queue."
       />
       <VoiceCall
+        smart={!!process.env.GEMINI_API_KEY}
+        serverVoice={!!process.env.ELEVENLABS_API_KEY}
         lenderName={org.shortName}
         leads={callable.map((l) => ({ id: l.id, name: l.firstName ?? l.externalLeadId, externalId: l.externalLeadId, category: l.category, language: l.preferredLanguage }))}
       />

@@ -10,9 +10,10 @@
 import clsx from "clsx";
 import { Keyboard, Loader2, Mic, MicOff, Phone, PhoneOff, Play, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { agentReplyAction, saveAgentCallAction, startAgentCallAction } from "@/app/actions/agent";
 import { runCustomAction } from "@/app/actions/domain";
-import { Button, Card, CardHeader, Field, inputClass, Notice } from "@/components/ui";
-import { enquiryLabelFor, OUTCOMES, runConversation, type CustomerInput } from "@/lib/conversation/engine";
+import { Badge, Button, Card, CardHeader, Field, inputClass, Notice } from "@/components/ui";
+import { enquiryLabelFor, OUTCOMES, runConversation, type CustomerInput, type Outcome } from "@/lib/conversation/engine";
 
 export interface CallLead {
   id: string;
@@ -98,7 +99,17 @@ function startRingtone(): () => void {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName: string }) {
+type AgentTurnC = { speaker: "AI" | "CUSTOMER" | "SYSTEM"; text: string; sig?: string };
+interface AgentState {
+  callId: string;
+  turns: AgentTurnC[];
+  ended: boolean;
+  outcome: Outcome | null;
+  outcomeSig: string | null;
+  lastSource: string | null;
+}
+
+export function VoiceCall({ leads, lenderName, smart, serverVoice }: { leads: CallLead[]; lenderName: string; smart: boolean; serverVoice: boolean }) {
   const [leadId, setLeadId] = useState(leads[0]?.id ?? "");
   const [callerName, setCallerName] = useState("");
   const [recogLang, setRecogLang] = useState("en-IN");
@@ -115,6 +126,11 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
   const [saving, setSaving] = useState(false);
   const [endedBy, setEndedBy] = useState<"assistant" | "you" | null>(null);
 
+  const [agent, setAgent] = useState<AgentState | null>(null);
+  const agentRef = useRef<AgentState | null>(null);
+  agentRef.current = agent;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [voiceSource, setVoiceSource] = useState<"elevenlabs" | "browser">(serverVoice ? "elevenlabs" : "browser");
   const spokenRef = useRef(0);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const interruptNext = useRef(false);
@@ -128,7 +144,9 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
     () => ({ lenderName, enquiryLabel: enquiryLabelFor(lead?.category), firstName: callerName.trim() || lead?.name }),
     [lead, lenderName, callerName],
   );
-  const run = useMemo(() => runConversation(engineCtx, inputs, { startHindi: lead?.language === "Hindi" }), [engineCtx, inputs, lead]);
+  const scripted = useMemo(() => runConversation(engineCtx, inputs, { startHindi: lead?.language === "Hindi" }), [engineCtx, inputs, lead]);
+  // In smart mode the conversation comes from the server-side LLM agent.
+  const run = smart && agent ? { turns: agent.turns, ended: agent.ended, outcome: agent.outcome } : scripted;
 
   useEffect(() => {
     setSupport({ tts: typeof window !== "undefined" && "speechSynthesis" in window, stt: !!getRecognitionCtor() });
@@ -137,6 +155,7 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
       stopRing.current();
       recRef.current?.abort();
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      audioRef.current?.pause();
     };
   }, []);
 
@@ -150,13 +169,31 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
     transcriptEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [run.turns.length, interim]);
 
-  const commit = useCallback((text: string) => {
-    const interrupt = interruptNext.current;
-    interruptNext.current = false;
-    setInterim("");
-    setActivity("processing");
-    setInputs((prev) => [...prev, interrupt ? { text, interrupt: true } : { text }]);
-  }, []);
+  const commit = useCallback(
+    (text: string) => {
+      const interrupt = interruptNext.current;
+      interruptNext.current = false;
+      setInterim("");
+      setActivity("processing");
+      setInputs((prev) => [...prev, interrupt ? { text, interrupt: true } : { text }]);
+      const a = agentRef.current;
+      if (smart && a) {
+        const history: AgentTurnC[] = [...a.turns, { speaker: "CUSTOMER", text }];
+        setAgent({ ...a, turns: history });
+        agentReplyAction(a.callId, leadId, callerName.trim() || undefined, history).then((r) => {
+          const cur = agentRef.current;
+          if (!cur || cur.callId !== a.callId || phaseRef.current !== "active") return;
+          if (!r.ok) {
+            setError(r.message);
+            setActivity("idle");
+            return;
+          }
+          setAgent({ ...cur, turns: [...history, r.turn], ended: r.ended, outcome: r.outcome, outcomeSig: r.outcomeSig, lastSource: r.source });
+        });
+      }
+    },
+    [smart, leadId, callerName],
+  );
 
   const listen = useCallback(() => {
     if (phaseRef.current !== "active") return;
@@ -216,21 +253,59 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
     const pending = aiTurns.slice(spokenRef.current);
     if (pending.length === 0) return;
     spokenRef.current = aiTurns.length;
-    const pieces = pending.flatMap((t) => chunks(t.text));
     const synth = window.speechSynthesis;
     synth.cancel();
     setActivity("speaking");
     const voice = support.tts ? pickVoice() : null;
+    const finish = () => {
+      if (phaseRef.current !== "active") return;
+      if (run.ended) {
+        setActivity("idle");
+        setEndedBy("assistant");
+        window.setTimeout(() => setPhase("ended"), 700);
+      } else if (muted || typing) setActivity("idle");
+      else listen();
+    };
+
+    // Prefer the server voice (ElevenLabs); fall back to the browser voice.
+    if (voiceSource === "elevenlabs") {
+      const text = pending.map((t) => t.text).join(" ");
+      let cancelled = false;
+      fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: text.slice(0, 700) }) })
+        .then(async (res) => {
+          if (cancelled || phaseRef.current !== "active") return;
+          if (res.status !== 200) {
+            setVoiceSource("browser");
+            speakBrowser(pending.flatMap((t) => chunks(t.text)));
+            return;
+          }
+          const url = URL.createObjectURL(await res.blob());
+          const audio = new Audio(url);
+          audioRef.current = audio;
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            finish();
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(url);
+            setVoiceSource("browser");
+            speakBrowser(pending.flatMap((t) => chunks(t.text)));
+          };
+          audio.play().catch(() => speakBrowser(pending.flatMap((t) => chunks(t.text))));
+        })
+        .catch(() => speakBrowser(pending.flatMap((t) => chunks(t.text))));
+      return () => {
+        cancelled = true;
+      };
+    }
+    speakBrowser(pending.flatMap((t) => chunks(t.text)));
+
+    function speakBrowser(pieces: string[]) {
 
     const next = (i: number) => {
       if (phaseRef.current !== "active") return;
       if (i >= pieces.length || !support.tts) {
-        if (run.ended) {
-          setActivity("idle");
-          setEndedBy("assistant");
-          window.setTimeout(() => setPhase("ended"), 700);
-        } else if (muted || typing) setActivity("idle");
-        else listen();
+        finish();
         return;
       }
       const u = new SpeechSynthesisUtterance(pieces[i]);
@@ -252,15 +327,22 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
       synth.speak(u);
     };
     next(0);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, run.turns.length]);
 
-  function placeCall() {
+  async function placeCall() {
     setError(null);
     setInputs([]);
     setElapsed(0);
     setEndedBy(null);
+    setAgent(null);
     spokenRef.current = 0;
+    if (smart) {
+      const r = await startAgentCallAction(leadId, callerName.trim() || undefined);
+      if (!r.ok) return setError(r.message);
+      setAgent({ callId: r.callId, turns: [r.greeting], ended: false, outcome: null, outcomeSig: null, lastSource: null });
+    }
     setPhase("ringing");
     stopRing.current = startRingtone();
   }
@@ -287,6 +369,7 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
 
   function hangUp() {
     window.speechSynthesis.cancel();
+    audioRef.current?.pause();
     recRef.current?.abort();
     setActivity("idle");
     setEndedBy((e) => e ?? "you");
@@ -295,6 +378,7 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
 
   function interrupt() {
     window.speechSynthesis.cancel();
+    audioRef.current?.pause();
     interruptNext.current = true;
     listen();
   }
@@ -319,7 +403,10 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
   async function save() {
     if (inputs.length === 0) return setError("You didn't say anything, so there's nothing to analyse. Place the call again.");
     setSaving(true);
-    const r = await runCustomAction(leadId, inputs, { channel: "BROWSER_VOICE", callerName: callerName.trim() || undefined });
+    const r =
+      smart && agent
+        ? await saveAgentCallAction(agent.callId, leadId, agent.turns, agent.ended ? { outcome: agent.outcome, outcomeSig: agent.outcomeSig } : null)
+        : await runCustomAction(leadId, inputs, { channel: "BROWSER_VOICE", callerName: callerName.trim() || undefined });
     if (r && !r.ok) {
       setError(r.message);
       setSaving(false);
@@ -337,7 +424,23 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
       <div className="space-y-6">
         {phase === "setup" ? (
           <Card>
-            <CardHeader title="Set up the demo call" description="You play the customer. The assistant calls you on behalf of the lender." />
+            <CardHeader
+              title="Set up the demo call"
+              description="You play the customer. The assistant calls you on behalf of the lender."
+              action={
+                <span className="flex gap-1.5">
+                  <Badge tone={smart ? "ok" : "neutral"}>{smart ? "Gemini brain on" : "Scripted brain"}</Badge>
+                  <Badge tone={serverVoice ? "ok" : "neutral"}>{serverVoice ? "ElevenLabs voice on" : "Browser voice"}</Badge>
+                </span>
+              }
+            />
+            {!smart && (
+              <div className="px-5 pt-4">
+                <Notice tone="neutral">
+                  Add <code className="font-mono text-xs">GEMINI_API_KEY</code> to <code className="font-mono text-xs">.env.local</code> and restart to let the assistant answer open questions about the catalogue. Without it, the call follows the fixed script.
+                </Notice>
+              </div>
+            )}
             <div className="grid gap-4 p-5 sm:grid-cols-2">
               <Field label="Lead record to use" htmlFor="lead" hint="Permission checks run against this lead.">
                 <select id="lead" className={inputClass} value={leadId} onChange={(e) => setLeadId(e.target.value)}>
@@ -396,6 +499,12 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
             <CardHeader
               title="Live captions"
               description={phase === "ended" ? `Call ended · ${outcomeLabel}` : "What the assistant said and what it heard you say."}
+              action={
+                <span className="flex gap-1.5">
+                  <Badge tone={smart ? "ok" : "neutral"}>{smart ? (agent?.lastSource === "script" ? "Brain: script (Gemini unavailable)" : "Brain: Gemini") : "Brain: script"}</Badge>
+                  <Badge>{voiceSource === "elevenlabs" ? "Voice: ElevenLabs" : "Voice: browser"}</Badge>
+                </span>
+              }
             />
             <div className="max-h-[480px] min-h-[320px] space-y-3 overflow-y-auto px-5 py-5">
               {phase === "ringing" && <p className="text-sm text-ink-3">Waiting for you to answer…</p>}
@@ -442,7 +551,7 @@ export function VoiceCall({ leads, lenderName }: { leads: CallLead[]; lenderName
         )}
         {error && <Notice tone="danger">{error}</Notice>}
         <Notice tone="sim" title="How this demo works">
-          No phone call is placed. Your browser speaks the assistant&apos;s lines and transcribes your replies; the conversation logic is the same deterministic engine used everywhere in SVARA. In Chrome, speech recognition is processed by the browser&apos;s speech service, so use made-up details only.
+          No phone call is placed. Your browser transcribes your replies. {smart ? "Replies are written by Gemini, grounded only in the approved catalogue, and screened by code: opt-out and requests for a person always end the call, and replies with rates, approval promises or credential requests are blocked." : "Replies come from the deterministic SVARA script."} {serverVoice ? "The voice is generated by ElevenLabs, falling back to the browser voice if credits run out." : ""} Speech and text are processed by third-party services, so use made-up details only.
         </Notice>
       </div>
 
