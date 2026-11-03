@@ -28,6 +28,20 @@ with fictional demo data. Pick a demo user on the sign-in screen.
 | `npm test` | Tests only |
 | `npm run build && npm start` | Production mode — requires `SESSION_SECRET` in `.env.local` |
 
+## What's in the demo
+
+| Area | What it does |
+|---|---|
+| **Leads** | Synthetic leads, CSV import with row-level validation and duplicate detection, a server-enforced permission gate, permanent opt-out suppression, pilot-batch approval |
+| **Product catalogue** | Lender-approved products: purposes, amount and tenure ranges, disclaimers, prohibited statements |
+| **Simulator** | 8 scripted scenarios plus "play the customer". English, Hindi and Hinglish; silence, interruption, questions, opt-out, escalation |
+| **Credit-need profile** | Each field has a value, confidence, source (customer-stated, AI-inferred or unknown) and linked transcript evidence |
+| **Matching** | Deterministic rules; up to 3 suggestions with reasons, conflicts and gaps, or "Insufficient information" |
+| **Review & export** | A human edits the summary, corrects fields, rates suggestions and sets follow-ups; every change is audited; CSV export masks phone numbers |
+| **Analytics** | Outcomes, leads by status, stated purposes, missing information, opt-outs, escalations, reviewer corrections |
+
+See `DEMO_SCRIPT.md` for the 5-minute lender walkthrough.
+
 ## Demo users
 
 | User | Organisation | Role |
@@ -46,7 +60,7 @@ Copy `.env.example` to `.env.local`. Everything is optional for local developmen
 |---|---|---|
 | `DATABASE_URL` | `file:./data/svara.db` | SQLite database file |
 | `SESSION_SECRET` | dev fallback | Signs session cookies. **Required** in production mode |
-| `LLM_PROVIDER` | `mock` | From Milestone 5. `mock` keeps the demo working offline |
+| `LLM_PROVIDER` | `mock` | `mock` keeps the demo working offline. `anthropic` uses `ANTHROPIC_API_KEY`, and falls back to the mock if the output fails validation |
 
 ## Project layout
 
@@ -55,7 +69,9 @@ src/
   app/            Next.js routes. (app)/ = signed-in area; actions/ = server actions
   components/     UI primitives (ui.tsx), sidebar, brand
   db/             Drizzle schema, enums, client, migrations runner, seed data
-  lib/            Domain logic: auth (rbac, sessions), audit, users, tenant context
+  lib/            Domain logic: auth, audit, users, leads, products, conversations,
+                  conversation/ (parser, dialogue engine, scenarios), extraction/
+                  (schema, mock, provider), matching, summary, exports, analytics
 drizzle/          SQL migrations (generated with `npm run db:generate`)
 scripts/          db-reset, ensure-db
 tests/            Vitest suites

@@ -16,3 +16,13 @@ founders. **Status:** ✅ confirmed by founders · 🟡 assumption, needs input.
 | A-09 | A second demo tenant ("Northbridge Bank (Demo)") is seeded. | It lets tenant isolation be shown and tested. | 🟡 |
 | A-10 | Times are displayed in IST, using the en-IN locale. | Indian market. | 🟡 |
 | A-11 | All organisation and person names in seed data are fictional. | PRD: never use real personal data. | ✅ |
+| A-12 | UI is monochrome: white surfaces and black primary, with colour used only for status. | Founders asked for black and white, 3 Nov 2026. | ✅ |
+| A-13 | A lead may enter the simulator only when permission is GRANTED, the timestamp, source and evidence reference are present, and DND is CLEAR. An UNKNOWN DND status blocks. | Conservative reading of PRD §7.3 and §9. | 🟡 Confirm with compliance |
+| A-14 | Opt-out is one-way: no service path reverses it. | PRD: never silently override an opt-out. A documented re-consent flow may be needed later. | 🟡 |
+| A-15 | Phone numbers are masked in every screen and export. | Data minimisation for a demo. | 🟡 |
+| A-16 | Extraction defaults to deterministic rules (`mock-rules-1.0`). An optional LLM provider must pass schema validation and evidence checks, otherwise the mock is used. Safety flags always come from rules. | Demo must work offline; never trust an unvalidated model. | 🟡 |
+| A-17 | Loan category and preferred language are labelled AI-inferred unless the customer states them. | PRD: distinguish stated facts from inferences. | ✅ |
+| A-18 | Matching is purpose-first: a product is suggested only if the stated purpose is one it is approved for. Amount outside the range is a conflict, never a disqualifier that's hidden. | Explainable, not a ranking of the customer. | 🟡 |
+| A-19 | Reviewer corrections are stored alongside the original extraction, never overwriting it. | Auditability. | ✅ |
+| A-20 | Demo content: 5 Kaveri products, 60 Kaveri leads, 12 Northbridge leads, 10 pre-run conversations (4 reviewed). | Makes the queue and analytics meaningful on first open. | ✅ |
+

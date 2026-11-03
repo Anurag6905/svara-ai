@@ -127,7 +127,7 @@ export function Importer() {
                       {[...errors, ...dups].sort((a, b) => a.row - b.row).map((i) => (
                         <tr key={`${i.kind}-${i.row}`}>
                           <Td className="tabular font-mono text-xs">{i.row}</Td>
-                          <Td className="font-mono text-xs">{i.leadId ?? "—"}</Td>
+                          <Td className="whitespace-nowrap font-mono text-xs">{i.leadId ?? "—"}</Td>
                           <Td>
                             <Badge tone={i.kind === "error" ? "danger" : "warn"}>{i.kind === "error" ? "Invalid" : "Duplicate"}</Badge>
                           </Td>
@@ -156,7 +156,7 @@ export function Importer() {
                       {preview.sample.filter((s) => !s.ready).map((s) => (
                         <tr key={s.row}>
                           <Td className="tabular font-mono text-xs">{s.row}</Td>
-                          <Td className="font-mono text-xs">{s.leadId}</Td>
+                          <Td className="whitespace-nowrap font-mono text-xs">{s.leadId}</Td>
                           <Td className="text-ink-2">{s.reasons.join("; ")}</Td>
                         </tr>
                       ))}
