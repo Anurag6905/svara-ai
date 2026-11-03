@@ -90,3 +90,16 @@ describe("dialogue engine guardrails", () => {
     for (const s of SCENARIOS) expect(runConversation(ctx, s.inputs).outcome, s.key).toBe(expected[s.key]);
   });
 });
+
+describe("real-speech phrasings", () => {
+  it("understands 'within a month' and an implicit yes via a callback time", () => {
+    const r = runConversation(ctx, [
+      { text: "Yes, tell me" },
+      { text: "I want to buy a new oven for my bakery" },
+      { text: "around 4 lakh" },
+      { text: "within a month" },
+      { text: "tomorrow evening after 6" },
+    ]);
+    expect(r.outcome).toBe("INTERESTED_FOLLOW_UP");
+  });
+});

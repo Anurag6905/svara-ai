@@ -102,6 +102,7 @@ export function parseTimeline(text: string): TimelineMatch | null {
       const k = toNum(m[1]) ?? 1;
       return { label: `Within ${k} month${k > 1 ? "s" : ""}`, withinDays: k * 30, phrase: m[0].trim() };
     }],
+    [/\b(?:in|within)\s+(?:a|one|ek)\s+(week|month)\b/, (m) => ({ label: `Within 1 ${m[1]}`, withinDays: m[1] === "week" ? 7 : 30, phrase: m[0] })],
     [/\b(this month|isi mahine|is mahine|month end)\b/, (m) => ({ label: "This month", withinDays: 30, phrase: m[0] })],
     [/\b(next month|agle mahine)\b/, (m) => ({ label: "Next month", withinDays: 60, phrase: m[0] })],
     [/\b(before|after) (diwali|holi|eid|christmas|the festival|festive season)\b/, (m) => ({ label: `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2].replace(/^the /, "").replace(/^\w/, (c) => c.toUpperCase())}`, withinDays: null, phrase: m[0] })],

@@ -154,13 +154,21 @@ export async function runScenarioAction(leadId: string, scenarioKey: string): Pr
   redirect(`/conversations/${id}?new=1`);
 }
 
-export async function runCustomAction(leadId: string, inputs: unknown): Promise<Result> {
+export async function runCustomAction(
+  leadId: string,
+  inputs: unknown,
+  opts: { channel?: "TYPED" | "BROWSER_VOICE"; callerName?: string } = {},
+): Promise<Result> {
   const { ctx } = await requireSession();
   const parsed = customInputsSchema.safeParse(inputs);
   if (!parsed.success) return { ok: false, message: "The conversation needs at least one customer reply." };
   let id: string;
   try {
-    ({ conversationId: id } = await runSimulation(getDb(), ctx, leadId, { customInputs: parsed.data }));
+    ({ conversationId: id } = await runSimulation(getDb(), ctx, leadId, {
+      customInputs: parsed.data,
+      channel: opts.channel === "BROWSER_VOICE" ? "BROWSER_VOICE" : "TYPED",
+      callerName: typeof opts.callerName === "string" ? opts.callerName.slice(0, 60) : undefined,
+    }));
   } catch (err) {
     return fail(err);
   }

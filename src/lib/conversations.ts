@@ -16,7 +16,7 @@ import {
 } from "@/db/schema";
 import { recordAudit } from "@/lib/audit";
 import { assertCan } from "@/lib/auth/rbac";
-import { OUTCOMES, runConversation, type CustomerInput, type Outcome } from "@/lib/conversation/engine";
+import { enquiryLabelFor, OUTCOMES, runConversation, type CustomerInput, type Outcome } from "@/lib/conversation/engine";
 import { getScenario } from "@/lib/conversation/scenarios";
 import { getExtractionProvider } from "@/lib/extraction/provider";
 import { needProfileSchema, PROFILE_FIELDS, type NeedProfile } from "@/lib/extraction/schema";
@@ -37,13 +37,12 @@ export const OUTCOME_TO_LEAD_STATUS: Record<Outcome, LeadStatus> = {
   HUMAN_REVIEW_REQUIRED: "HUMAN_REVIEW_REQUIRED",
 };
 
-const ENQUIRY_LABELS: Record<string, string> = {
-  "Personal Loan": "personal loan enquiry",
-  "Working Capital": "working capital loan enquiry",
-  "Equipment Loan": "equipment loan enquiry",
-  "Micro Enterprise Loan": "business loan enquiry",
-  "Business Loan": "business loan enquiry",
-};
+
+/** A display name for the greeting only (voice demo). Letters and spaces, 40 chars max. */
+export function sanitiseName(name: string): string | null {
+  const clean = name.replace(/[^\p{L} .'-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 40);
+  return clean || null;
+}
 
 export const customInputsSchema = z
   .array(z.object({ text: z.string().max(500), interrupt: z.boolean().optional() }))
@@ -58,7 +57,9 @@ export async function runSimulation(
   db: Db,
   ctx: TenantContext,
   leadId: string,
-  input: { scenarioKey: string } | { customInputs: CustomerInput[] },
+  input:
+    | { scenarioKey: string }
+    | { customInputs: CustomerInput[]; channel?: "TYPED" | "BROWSER_VOICE"; callerName?: string },
   opts: { now?: Date } = {},
 ) {
   assertCan(ctx.role, "simulator.run");
@@ -75,15 +76,15 @@ export async function runSimulation(
     scenario = s.key;
   } else {
     inputs = customInputsSchema.parse(input.customInputs);
-    scenario = "custom";
+    scenario = input.channel === "BROWSER_VOICE" ? "browser_voice_call" : "custom";
   }
 
   const [org] = await db.select().from(organisations).where(eq(organisations.id, ctx.organisationId));
   const run = runConversation(
     {
       lenderName: org.shortName,
-      enquiryLabel: ENQUIRY_LABELS[lead.category ?? ""] ?? "loan enquiry",
-      firstName: lead.firstName,
+      enquiryLabel: enquiryLabelFor(lead.category),
+      firstName: "callerName" in input && input.callerName ? sanitiseName(input.callerName) : lead.firstName,
     },
     inputs,
     { startHindi: lead.preferredLanguage === "Hindi" },

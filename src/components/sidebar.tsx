@@ -7,6 +7,7 @@ import {
   Contact,
   Inbox,
   Package,
+  PhoneCall,
   LayoutDashboard,
   LogOut,
   ScrollText,
@@ -20,7 +21,7 @@ import { Logo } from "@/components/brand";
 import { Avatar } from "@/components/ui";
 import type { NavItem } from "@/lib/nav";
 
-const ICONS: Record<string, LucideIcon> = { LayoutDashboard, Users, ScrollText, Contact, AudioLines, Inbox, Package, BarChart3 };
+const ICONS: Record<string, LucideIcon> = { LayoutDashboard, Users, ScrollText, Contact, AudioLines, Inbox, Package, BarChart3, PhoneCall };
 
 export function Sidebar({
   items,

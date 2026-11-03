@@ -12,6 +12,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Overview", icon: "LayoutDashboard", section: "workspace" },
   { href: "/leads", label: "Leads", icon: "Contact", permission: "leads.view", section: "workspace" },
+  { href: "/call", label: "Live call demo", icon: "PhoneCall", permission: "simulator.run", section: "workspace" },
   { href: "/simulator", label: "Simulator", icon: "AudioLines", permission: "simulator.run", section: "workspace" },
   { href: "/conversations", label: "Review queue", icon: "Inbox", permission: "leads.view", section: "workspace" },
   { href: "/products", label: "Product catalogue", icon: "Package", permission: "products.view", section: "workspace" },

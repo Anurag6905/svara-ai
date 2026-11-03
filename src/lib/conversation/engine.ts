@@ -40,6 +40,19 @@ export const OUTCOMES = {
 } as const;
 export type Outcome = keyof typeof OUTCOMES;
 
+const ENQUIRY_LABELS: Record<string, string> = {
+  "Personal Loan": "personal loan enquiry",
+  "Working Capital": "working capital loan enquiry",
+  "Equipment Loan": "equipment loan enquiry",
+  "Micro Enterprise Loan": "business loan enquiry",
+  "Business Loan": "business loan enquiry",
+};
+
+/** Shared by server and browser so both build the identical opening line. */
+export function enquiryLabelFor(category: string | null | undefined): string {
+  return ENQUIRY_LABELS[category ?? ""] ?? "loan enquiry";
+}
+
 export interface Turn {
   speaker: "AI" | "CUSTOMER" | "SYSTEM";
   text: string;
@@ -279,7 +292,8 @@ export function runConversation(ctx: EngineContext, inputs: CustomerInput[], opt
         break;
       }
       case "HANDOFF": {
-        if (detectAffirm(text) && !detectDeny(text)) {
+        // Giving a callback time is an implicit yes.
+        if ((detectAffirm(text) && !detectDeny(text)) || (detectCallbackTime(text) && !detectDeny(text))) {
           st.callbackMode = "FOLLOW_UP";
           const when = detectCallbackTime(text);
           if (when) end("INTERESTED_FOLLOW_UP", T.endFollowUp(st.hindi ? when : `a callback ${when}`, st.hindi));

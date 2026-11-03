@@ -5,7 +5,7 @@ import { AudioLines, Bot, CornerDownLeft, Loader2, Play, RotateCcw, User, Volume
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { runCustomAction, runScenarioAction } from "@/app/actions/domain";
 import { Badge, Button, Card, CardHeader, inputClass, Notice } from "@/components/ui";
-import { runConversation, OUTCOMES, type CustomerInput } from "@/lib/conversation/engine";
+import { enquiryLabelFor, runConversation, OUTCOMES, type CustomerInput } from "@/lib/conversation/engine";
 import type { Scenario } from "@/lib/conversation/scenarios";
 
 export interface SimLead {
@@ -39,8 +39,7 @@ export function Simulator({
   const engineCtx = useMemo(
     () => ({
       lenderName,
-      enquiryLabel:
-        lead?.category === "Personal Loan" ? "personal loan enquiry" : lead?.category === "Working Capital" ? "working capital loan enquiry" : lead?.category === "Equipment Loan" ? "equipment loan enquiry" : "business loan enquiry",
+      enquiryLabel: enquiryLabelFor(lead?.category),
       firstName: lead?.name,
     }),
     [lead, lenderName],
