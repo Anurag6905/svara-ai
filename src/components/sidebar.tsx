@@ -2,6 +2,11 @@
 
 import clsx from "clsx";
 import {
+  AudioLines,
+  BarChart3,
+  Contact,
+  Inbox,
+  Package,
   LayoutDashboard,
   LogOut,
   ScrollText,
@@ -15,7 +20,7 @@ import { Logo } from "@/components/brand";
 import { Avatar } from "@/components/ui";
 import type { NavItem } from "@/lib/nav";
 
-const ICONS: Record<string, LucideIcon> = { LayoutDashboard, Users, ScrollText };
+const ICONS: Record<string, LucideIcon> = { LayoutDashboard, Users, ScrollText, Contact, AudioLines, Inbox, Package, BarChart3 };
 
 export function Sidebar({
   items,
@@ -68,7 +73,7 @@ export function Sidebar({
                         className={clsx(
                           "focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-colors",
                           active
-                            ? "bg-accent-soft font-medium text-accent"
+                            ? "bg-ink font-medium text-white"
                             : "text-ink-2 hover:bg-surface-2 hover:text-ink",
                         )}
                       >

@@ -1,0 +1,10 @@
+lead_id,first_name,phone_number,loan_category,lead_source,enquiry_date,preferred_language,permission_status,permission_timestamp,permission_source,permission_reference,do_not_call_status
+DEMO-IMP-001,Rekha,+91 98200 00101,Equipment Loan,Website enquiry form,2026-10-28,Hindi,GRANTED,2026-10-28T10:15:00+05:30,Website callback request,WEB-CONSENT-50101,CLEAR
+DEMO-IMP-002,Faisal,9820000102,Working Capital,Branch walk-in callback request,2026-10-29,English,GRANTED,2026-10-29T12:40:00+05:30,Branch consent form,BR-CONSENT-50102,CLEAR
+DEMO-IMP-003,Leena,+91 98200 00103,Business Loan,Partner DSA referral,2026-10-29,Marathi,PENDING,,Partner DSA referral,,CLEAR
+DEMO-IMP-004,Gaurav,+91 98200 00104,Micro Enterprise Loan,Mobile app enquiry,2026-10-30,Hinglish,GRANTED,2026-10-30T09:05:00+05:30,In-app consent,APP-CONSENT-50104,REGISTERED
+DEMO-IMP-005,Tanvi,12345,Personal Loan,Website enquiry form,2026-10-30,English,GRANTED,2026-10-30T16:00:00+05:30,Website callback request,WEB-CONSENT-50105,CLEAR
+DEMO-IMP-006,Arif,+91 98200 00106,Equipment Loan,,2026-10-31,Hindi,GRANTED,2026-10-31T11:00:00+05:30,Website callback request,WEB-CONSENT-50106,CLEAR
+DEMO-IMP-007,Shalini,+91 98200 00107,Working Capital,Website enquiry form,31/10/2026,English,YES,2026-10-31T11:30:00+05:30,Website callback request,WEB-CONSENT-50107,CLEAR
+DEMO-IMP-002,Faisal,9820000102,Working Capital,Branch walk-in callback request,2026-10-29,English,GRANTED,2026-10-29T12:40:00+05:30,Branch consent form,BR-CONSENT-50102,CLEAR
+DEMO-IMP-009,Nikhil,+91 98200 00109,Business Loan,Existing customer request,2026-11-01,English,GRANTED,2026-11-01T14:20:00+05:30,Relationship manager note,RM-CONSENT-50109,

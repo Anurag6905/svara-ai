@@ -42,36 +42,37 @@ export default async function SignInPage({
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
-      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-surface p-12 lg:flex">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#0a0a0a] p-12 text-white lg:flex">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.35]"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 20% 15%, rgb(45 212 232 / 0.12), transparent 45%)",
+              "linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
           }}
         />
-        <Logo />
+        <div className="relative"><Logo inverted /></div>
         <div className="relative max-w-md">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-white/50">
             Credit-need intelligence
           </p>
-          <h1 className="mt-3 text-[34px] font-semibold leading-[1.15] tracking-tight">
+          <h1 className="mt-3 text-[40px] font-semibold leading-[1.1] tracking-tight text-white">
             From customer intent to a better-qualified lead.
           </h1>
-          <p className="mt-4 text-sm leading-relaxed text-ink-3">
+          <p className="mt-5 text-sm leading-relaxed text-white/60">
             SVARA structures what a customer actually said about their credit need,
             links every field to the conversation, and hands your sales team a brief
             they can trust — with a human reviewing every suggestion.
           </p>
         </div>
-        <ul className="relative space-y-2.5 text-[13px] text-ink-3">
+        <ul className="relative space-y-2.5 text-[13px] text-white/60">
           <li className="flex items-center gap-2.5">
-            <ShieldCheck className="size-4 text-ok" /> Not an underwriting, scoring or
+            <ShieldCheck className="size-4 text-white" /> Not an underwriting, scoring or
             approval system
           </li>
           <li className="flex items-center gap-2.5">
-            <FlaskConical className="size-4 text-sim" /> Demo environment: synthetic
+            <FlaskConical className="size-4 text-white" /> Demo environment: synthetic
             data and simulated conversations only
           </li>
         </ul>
@@ -99,7 +100,7 @@ export default async function SignInPage({
                 <p className="text-[13px] font-medium text-ink-2">{org.name}</p>
                 <Badge>{org.institutionType}</Badge>
               </div>
-              <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+              <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
                 {members.map((u) => (
                   <li key={u.id}>
                     <form action={signInAsDemoUser}>
@@ -122,7 +123,7 @@ export default async function SignInPage({
                             {ROLE_DESCRIPTIONS[u.role]}
                           </span>
                         </span>
-                        <ArrowRight className="size-4 text-ink-4 transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
+                        <ArrowRight className="size-4 text-ink-4 transition-transform group-hover:translate-x-0.5 group-hover:text-ink" />
                       </button>
                     </form>
                   </li>

@@ -1,8 +1,9 @@
 import type { Db } from "./client";
 import { organisations, users } from "./schema";
 import { DEMO_ORGS, DEMO_USERS, type DemoOrgKey } from "./seed-data";
+import { seedDemoContent } from "./seed-demo";
 
-export async function seed(db: Db) {
+export async function seed(db: Db, opts: { content?: boolean } = { content: true }) {
   const orgIds = {} as Record<DemoOrgKey, string>;
 
   for (const org of DEMO_ORGS) {
@@ -29,5 +30,6 @@ export async function seed(db: Db) {
     });
   }
 
+  if (opts.content !== false) await seedDemoContent(db, orgIds);
   return { orgIds };
 }

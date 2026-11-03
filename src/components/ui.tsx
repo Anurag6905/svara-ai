@@ -12,9 +12,9 @@ const buttonBase =
   "focus-ring inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-canvas hover:bg-accent-strong",
+  primary: "bg-accent text-on-accent hover:bg-accent-strong",
   secondary:
-    "border border-line-strong bg-surface-2 text-ink hover:bg-surface-3 hover:border-ink-4",
+    "border border-line-strong bg-surface text-ink hover:bg-surface-2 hover:border-ink-4",
   ghost: "text-ink-2 hover:bg-surface-2 hover:text-ink",
   danger:
     "border border-danger/40 bg-danger-soft text-danger hover:bg-danger/20",
@@ -62,7 +62,7 @@ export function Card({
 }) {
   return (
     <section
-      className={clsx("rounded-xl border border-line bg-surface", className)}
+      className={clsx("rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.04)]", className)}
     >
       {children}
     </section>
@@ -106,7 +106,7 @@ export function PageHeader({
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="max-w-2xl">
         {eyebrow && (
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-[0.14em] text-accent">
+          <p className="mb-1.5 text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
             {eyebrow}
           </p>
         )}
@@ -126,7 +126,7 @@ export type Tone = "neutral" | "accent" | "ok" | "warn" | "danger" | "sim";
 
 const toneClasses: Record<Tone, string> = {
   neutral: "bg-surface-3 text-ink-2 ring-line-strong",
-  accent: "bg-accent-soft text-accent ring-accent/30",
+  accent: "bg-ink text-white ring-ink",
   ok: "bg-ok-soft text-ok ring-ok/30",
   warn: "bg-warn-soft text-warn ring-warn/30",
   danger: "bg-danger-soft text-danger ring-danger/30",
@@ -170,7 +170,7 @@ export function Stat({
   icon?: LucideIcon;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
+    <div className="rounded-xl border border-line bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-ink-3">{label}</p>
         {Icon && <Icon className="size-4 text-ink-4" aria-hidden />}
@@ -297,7 +297,7 @@ export function Td({
 // ───────────── Forms ─────────────
 
 export const inputClass =
-  "focus-ring h-10 w-full rounded-lg border border-line-strong bg-surface-2 px-3 text-sm text-ink placeholder:text-ink-4 hover:border-ink-4 focus:border-accent";
+  "focus-ring h-10 w-full rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink placeholder:text-ink-4 hover:border-ink-4 focus:border-ink";
 
 export function Field({
   label,
@@ -337,7 +337,7 @@ export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   return (
     <span
       className={clsx(
-        "grid shrink-0 place-items-center rounded-full bg-surface-3 font-semibold text-ink-2 ring-1 ring-line-strong",
+        "grid shrink-0 place-items-center rounded-full bg-surface-2 font-semibold text-ink-2 ring-1 ring-line-strong",
         size === "sm" ? "size-7 text-[11px]" : "size-9 text-xs",
       )}
       aria-hidden

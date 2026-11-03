@@ -1,42 +1,45 @@
 @import "tailwindcss";
 
 /*
- * SVARA design tokens. Dark navy base, restrained cyan accent.
+ * SVARA design tokens. Monochrome: white and black, with status colour only.
  * Semantic colours are used for status only — never decoration.
  */
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --color-canvas: #070d1a;
-  --color-surface: #0d1526;
-  --color-surface-2: #121c31;
-  --color-surface-3: #18243d;
-  --color-line: #1f2b45;
-  --color-line-strong: #2b3a5c;
+  /* Monochrome base: white surfaces, near-black ink, black as the primary. */
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-2: #f5f5f5;
+  --color-surface-3: #ebebeb;
+  --color-line: #e8e8e8;
+  --color-line-strong: #d4d4d4;
 
-  --color-ink: #e7edf7;
-  --color-ink-2: #b3c0d6;
-  --color-ink-3: #7d8ca8;
-  --color-ink-4: #56647f;
+  --color-ink: #0a0a0a;
+  --color-ink-2: #3a3a3a;
+  --color-ink-3: #6b6b6b;
+  --color-ink-4: #a3a3a3;
 
-  --color-accent: #2dd4e8;
-  --color-accent-strong: #5ee4f2;
-  --color-accent-soft: rgb(45 212 232 / 0.12);
-  --color-blue: #4f8cff;
+  --color-accent: #0a0a0a;
+  --color-accent-strong: #262626;
+  --color-accent-soft: rgb(10 10 10 / 0.06);
+  --color-on-accent: #ffffff;
+  --color-blue: #2563eb;
 
-  --color-ok: #34d399;
-  --color-ok-soft: rgb(52 211 153 / 0.12);
-  --color-warn: #fbbf24;
-  --color-warn-soft: rgb(251 191 36 / 0.12);
-  --color-danger: #f87171;
-  --color-danger-soft: rgb(248 113 113 / 0.12);
-  --color-sim: #c4a3ff;
-  --color-sim-soft: rgb(196 163 255 / 0.12);
+  /* Status colours: used sparingly, for meaning only. */
+  --color-ok: #047857;
+  --color-ok-soft: rgb(4 120 87 / 0.08);
+  --color-warn: #b45309;
+  --color-warn-soft: rgb(180 83 9 / 0.08);
+  --color-danger: #b91c1c;
+  --color-danger-soft: rgb(185 28 28 / 0.07);
+  --color-sim: #5b21b6;
+  --color-sim-soft: rgb(91 33 182 / 0.07);
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -47,7 +50,7 @@ body {
 }
 
 ::selection {
-  background: rgb(45 212 232 / 0.3);
+  background: rgb(10 10 10 / 0.12);
 }
 
 /* Focus ring used consistently by all interactive elements. */

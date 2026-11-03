@@ -8,23 +8,14 @@ export interface NavItem {
   section: "workspace" | "admin";
 }
 
-/**
- * Only features that exist appear in navigation — every visible control must
- * work (PRD §10). Later milestones append items here.
- */
+/** Only features that exist appear in navigation — every visible control must work. */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Overview", icon: "LayoutDashboard", section: "workspace" },
-  {
-    href: "/settings/users",
-    label: "Users & roles",
-    icon: "Users",
-    section: "admin",
-  },
-  {
-    href: "/settings/audit",
-    label: "Audit log",
-    icon: "ScrollText",
-    permission: "audit.view",
-    section: "admin",
-  },
+  { href: "/leads", label: "Leads", icon: "Contact", permission: "leads.view", section: "workspace" },
+  { href: "/simulator", label: "Simulator", icon: "AudioLines", permission: "simulator.run", section: "workspace" },
+  { href: "/conversations", label: "Review queue", icon: "Inbox", permission: "leads.view", section: "workspace" },
+  { href: "/products", label: "Product catalogue", icon: "Package", permission: "products.view", section: "workspace" },
+  { href: "/analytics", label: "Analytics", icon: "BarChart3", permission: "analytics.view", section: "workspace" },
+  { href: "/settings/users", label: "Users & roles", icon: "Users", section: "admin" },
+  { href: "/settings/audit", label: "Audit log", icon: "ScrollText", permission: "audit.view", section: "admin" },
 ];
