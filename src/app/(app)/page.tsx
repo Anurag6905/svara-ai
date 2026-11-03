@@ -9,6 +9,9 @@ import {
   KeyRound,
 } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { listConversations } from "@/lib/conversations";
+import { listLeads } from "@/lib/leads";
 import { Badge, Card, CardHeader, PageHeader, Stat } from "@/components/ui";
 import { getDb } from "@/db/client";
 import { auditEvents, users } from "@/db/schema";
@@ -67,6 +70,8 @@ export default async function OverviewPage() {
   ]);
 
   const perms = permissionsFor(ctx.role);
+  const leadRows = await listLeads(db, ctx);
+  const convRows = await listConversations(db, ctx);
   const firstName = user.name.split(" ")[0];
   const doneCount = MILESTONES.filter((m) => m.done).length;
 
@@ -75,24 +80,36 @@ export default async function OverviewPage() {
       <PageHeader
         eyebrow={organisation.shortName}
         title={`Welcome back, ${firstName}`}
-        description="Your lending-sales workspace. Leads, the product catalogue and the conversation simulator are added in the next milestones."
+        description="Your lending-sales workspace: permissioned leads in, evidence-backed credit-need briefs out — with a person reviewing every one."
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Active team members" value={members.n} icon={Users} />
-        <Stat
-          label="Audited actions"
-          value={activity.n}
-          hint="Last 7 days"
-          icon={Activity}
-        />
-        <Stat
-          label="Your role"
-          value={<span className="text-xl">{ROLE_LABELS[ctx.role]}</span>}
-          hint={`${perms.length} permissions`}
-          icon={KeyRound}
-        />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Leads" value={leadRows.length} hint={`${leadRows.filter((l) => l.gate.allowed).length} permissioned`} icon={Users} />
+        <Stat label="Simulated conversations" value={convRows.length} hint="Labelled separately from live calls" icon={Activity} />
+        <Stat label="Awaiting review" value={convRows.filter((c) => c.status === "AWAITING_REVIEW").length} hint="Briefs a person must check" icon={KeyRound} />
+        <Stat label="Opt-outs honoured" value={leadRows.filter((l) => l.status === "OPTED_OUT").length} hint={`${activity.n} audited actions this week · ${members.n} team members`} icon={ShieldCheck} />
       </div>
+
+      <Card className="mt-6">
+        <CardHeader title="Demo walkthrough" description="The five-minute path for a lender meeting." />
+        <ol className="grid gap-px bg-line sm:grid-cols-5">
+          {[
+            ["1", "Import leads", "Row-level checks and permission gate", "/leads/import"],
+            ["2", "Simulate a call", "Hinglish, questions, opt-out", "/simulator"],
+            ["3", "Inspect the brief", "Every field linked to evidence", "/conversations"],
+            ["4", "Review & export", "Human decides, CSV out", "/conversations"],
+            ["5", "Check quality", "Opt-outs and corrections", "/analytics"],
+          ].map(([n, t, d, href]) => (
+            <li key={n} className="bg-surface">
+              <Link href={href} className="focus-ring group block h-full p-5 hover:bg-surface-2">
+                <span className="font-mono text-xs text-ink-4">{n}</span>
+                <p className="mt-1 text-sm font-semibold group-hover:underline">{t}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-3">{d}</p>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>

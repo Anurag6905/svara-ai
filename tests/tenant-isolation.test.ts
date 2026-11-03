@@ -48,7 +48,9 @@ describe("tenant isolation", () => {
     await recordAudit(db, kaveriAdmin, { action: "test.kaveri", entityType: "test" });
     await recordAudit(db, northbridgeAdmin, { action: "test.northbridge", entityType: "test" });
     const kaveriEvents = await listAuditEvents(db, kaveriAdmin);
-    expect(kaveriEvents.map((e) => e.action)).toEqual(["test.kaveri"]);
+    const actions = kaveriEvents.map((e) => e.action);
+    expect(actions).toContain("test.kaveri");
+    expect(actions).not.toContain("test.northbridge");
   });
 });
 

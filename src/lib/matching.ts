@@ -75,12 +75,13 @@ export function matchProducts(profile: NeedProfile, catalogue: MatchableProduct[
 
     const fullAmountConflict = conflicts.some((c) => c.includes("above") || c.includes("below"));
     const status: MatchResult["status"] = conflicts.length === 0 && missing.length === 0 ? "POSSIBLE_MATCH" : "PARTIAL_MATCH";
-    const rank = (fullAmountConflict ? 2 : 0) + (conflicts.length ? 1 : 0) + missing.length * 0.5;
+    // Fewer approved purposes = more specific product, preferred on ties.
+    const rank = (fullAmountConflict ? 2 : 0) + (conflicts.length ? 1 : 0) + missing.length * 0.5 + a.purposes.length * 0.01;
     results.push({ productId: p.id, productName: p.name, status, reasons, conflicts, missing, rank });
   }
 
   results.sort((x, y) => x.rank - y.rank || x.productName.localeCompare(y.productName));
-  const top = results.slice(0, 3).map(({ rank: _rank, ...r }) => r);
+  const top = results.slice(0, 3).map(({ productId, productName, status, reasons, conflicts, missing }) => ({ productId, productName, status, reasons, conflicts, missing }));
 
   if (top.length === 0) {
     return {

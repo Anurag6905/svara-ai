@@ -149,7 +149,7 @@ export function Importer() {
                       <tr>
                         <Th>Row</Th>
                         <Th>Lead ID</Th>
-                        <Th>Why it's blocked</Th>
+                        <Th>Why it&apos;s blocked</Th>
                       </tr>
                     </thead>
                     <tbody>

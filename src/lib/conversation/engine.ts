@@ -201,7 +201,10 @@ export function runConversation(ctx: EngineContext, inputs: CustomerInput[], opt
     turns.push({ speaker: "CUSTOMER", text, timestampMs: clock });
     clock += speakMs(text) + 500;
     st.silences = 0;
+    // Follow the customer's language: switch to Hinglish when they use it, and
+    // back to English when they clearly reply in English.
     if (detectHindi(text)) st.hindi = true;
+    else if (text.trim().split(/\s+/).length >= 3) st.hindi = false;
 
     // Hard stops first — these override every other intent.
     if (detectOptOut(text)) {

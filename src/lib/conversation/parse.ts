@@ -104,7 +104,7 @@ export function parseTimeline(text: string): TimelineMatch | null {
     }],
     [/\b(this month|isi mahine|is mahine|month end)\b/, (m) => ({ label: "This month", withinDays: 30, phrase: m[0] })],
     [/\b(next month|agle mahine)\b/, (m) => ({ label: "Next month", withinDays: 60, phrase: m[0] })],
-    [/\b(before|after) (diwali|holi|eid|christmas|the festival|festive season)\b/, (m) => ({ label: `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2].replace(/^the /, "")}`, withinDays: null, phrase: m[0] })],
+    [/\b(before|after) (diwali|holi|eid|christmas|the festival|festive season)\b/, (m) => ({ label: `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2].replace(/^the /, "").replace(/^\w/, (c) => c.toUpperCase())}`, withinDays: null, phrase: m[0] })],
     [/\b(next year|early next year|agle saal)\b/, (m) => ({ label: "Next year", withinDays: 365, phrase: m[0] })],
     [/\b(in a few months|kuch mahine|couple of months)\b/, (m) => ({ label: "In a few months", withinDays: 120, phrase: m[0] })],
   ];
