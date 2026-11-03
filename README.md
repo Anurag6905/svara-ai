@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SVARA AI — Demo MVP
 
-## Getting Started
+Credit-need intelligence for bank and NBFC lending-sales teams. SVARA structures what a
+customer said about their credit need, links every field to transcript evidence, suggests
+lender-approved products with the reason for each, and hands a brief to a human reviewer.
 
-First, run the development server:
+> **Demo only.** Synthetic data and simulated conversations. No live calls are placed.
+> This software is not compliant or production-ready and is not an underwriting,
+> credit-scoring or loan-approval system.
+
+## Run it locally (Windows, macOS or Linux)
+
+Requires **Node.js 20.9 or newer** (check with `node -v`).
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. The first `npm run dev` creates `data/svara.db` and fills it
+with fictional demo data. Pick a demo user on the sign-in screen.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the app (creates the demo database on first run) |
+| `npm run db:reset` | Wipe and re-seed the demo database — use before every demo |
+| `npm run check` | Lint + type check + tests |
+| `npm test` | Tests only |
+| `npm run build && npm start` | Production mode — requires `SESSION_SECRET` in `.env.local` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Demo users
 
-## Learn More
+| User | Organisation | Role |
+|---|---|---|
+| Priya Nair | Kaveri Capital Finance (Demo NBFC) | Organisation Admin |
+| Rohan Mehta | Kaveri Capital Finance | Manager |
+| Ananya Kulkarni | Kaveri Capital Finance | Agent |
+| Imran Shaikh | Kaveri Capital Finance | Read-only Analyst |
+| Kavya Iyer | Northbridge Bank (Demo) | Organisation Admin — second tenant, proves isolation |
 
-To learn more about Next.js, take a look at the following resources:
+## Environment variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Copy `.env.example` to `.env.local`. Everything is optional for local development.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `file:./data/svara.db` | SQLite database file |
+| `SESSION_SECRET` | dev fallback | Signs session cookies. **Required** in production mode |
+| `LLM_PROVIDER` | `mock` | From Milestone 5. `mock` keeps the demo working offline |
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+  app/            Next.js routes. (app)/ = signed-in area; actions/ = server actions
+  components/     UI primitives (ui.tsx), sidebar, brand
+  db/             Drizzle schema, enums, client, migrations runner, seed data
+  lib/            Domain logic: auth (rbac, sessions), audit, users, tenant context
+drizzle/          SQL migrations (generated with `npm run db:generate`)
+scripts/          db-reset, ensure-db
+tests/            Vitest suites
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Rules every module follows:** all reads and writes go through `lib/*` service functions
+that take a `TenantContext` and filter by `organisationId`; permissions are checked
+server-side with `assertCan`; critical actions call `recordAudit`, which redacts
+sensitive values.
+
+See `BUILD_STATUS.md` for progress and `ASSUMPTIONS.md` for open decisions.
